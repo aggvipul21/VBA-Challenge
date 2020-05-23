@@ -5,11 +5,14 @@ Sub stock_calc()
     Dim LastRow As Long, summarycolumn As Integer, LargestIncPercent As Double, LargestDecPercent As Double, LargestStockVol As Double
     Dim LargestIncTicker As String, LargestDecTicker As String, LargestVolTicker As String
     Dim RedColor As Integer, GreenColor As Integer
-    
+
+'Declare variables for color
+
     RedColor = 3
     GreenColor = 10
 
-    
+'Loop through all the sheets in excel
+
     For Each ws In Worksheets
         
         datacounter = 0
@@ -20,17 +23,27 @@ Sub stock_calc()
     
     
         For i = 3 To LastRow
-        
+       
+ 'Compare ticker value in cell with ticker value in last cell to find change in ticker value in current cell- If values are same this code is run
+ 
+ 
             If (ws.Cells(i, 1) = ws.Cells(i - 1, 1)) Then
             
+ 'Check if this is last row and if not then add stock volume of previous row to stock volume of ticker
+ 
                 If (i <> LastRow) Then
                 
                     ticker = ws.Cells(i - 1, 1)
                     datacounter = datacounter + 1
                     totalstockvolume = totalstockvolume + ws.Cells(i - 1, 7)
+
+'If datacounter is 1 it would mean this is the first row for a ticker and assign Open price for Year
+                    
                     If (datacounter = 1) Then
                         beginYearOpen = ws.Cells(i - 1, 3)
                     End If
+                
+'If last row then stock volume of previous row and current row added to get stock volume of ticker and set Year End Price
                 
                 Else
                     
@@ -72,17 +85,33 @@ Sub stock_calc()
                 
                 End If
                 
-               
+ 'If value of ticker changes from previous row
              Else
-             
-                endyearclose = ws.Cells(i - 1, 6)
-                totalstockvolume = totalstockvolume + ws.Cells(i - 1, 7)
+            
+  'If this is not the first row set end year close price for ticker and add the previous row volume to ticker's stock volume
+  
+                If (datacounter <> 0) Then
+                    endyearclose = ws.Cells(i - 1, 6)
+                    totalstockvolume = totalstockvolume + ws.Cells(i - 1, 7)
                 
+    'If this is the first row set ticker, begin year open price, end year close price for ticker and row volume as ticker's stock volume
+    
+                Else
                 
+                    ticker = ws.Cells(i - 1, 1)
+                    beginYearOpen = ws.Cells(i - 1, 3)
+                    endyearclose = ws.Cells(i - 1, 6)
+                    totalstockvolume = totalstockvolume + ws.Cells(i - 1, 7)
+                End If
+
+'Setting value of ticker, Yearly change in new cells
+
                 ws.Cells(summaryrow, 9) = ticker
                 'ws.Cells(summaryrow, 10) = beginYearOpen
                 'ws.Cells(summaryrow, 11) = endyearclose
                 ws.Cells(summaryrow, 10) = endyearclose - beginYearOpen
+ 
+ 'Setting color for Yearly Change color. If >0 then Green Else If less than 0 then Red else keep default (blank) color
                 
                 If ((endyearclose - beginYearOpen) < 0) Then
                     
@@ -94,6 +123,7 @@ Sub stock_calc()
                 
                 End If
                     
+ 'Calculate % change for year's last closing to year's opening price. If year's opening price is 0 then store value as "NA"
                 
                 If (beginYearOpen = 0) Then
                         
@@ -103,9 +133,12 @@ Sub stock_calc()
                         ws.Cells(summaryrow, 11) = Format(((endyearclose - beginYearOpen) / beginYearOpen), "Percent")
                 End If
                 
+ 'Assign Total Stock volume
+ 
                 ws.Cells(summaryrow, 12) = totalstockvolume
             
-                
+ 'Reset datacounter, stockvolumertotal variables to 0 and summary row for data insert for each ticker is incremented by 1
+ 
                 datacounter = 0
                 totalstockvolume = 0
                 summaryrow = summaryrow + 1
@@ -117,6 +150,11 @@ Sub stock_calc()
             
         Next i
         
+        
+'Calculate Largest % increase, Largest% decrease and greatest total volume for each cell
+
+    'intialize value of variables for Largest%inc, Largest%Dec, TotalStockVol to 0
+    
             LargestIncPercent = 0
             LargestDecPercent = 0
             LargestStockVol = 0
@@ -131,16 +169,21 @@ Sub stock_calc()
             
             'MsgBox (ws.Name & LargestIncPercent & LargestDecPercent & LargestStockVol)
             
+    'Loop through all records created for ticker, %Change
+
             For j = 2 To ws.Cells(Rows.Count, 9).End(xlUp).Row
             
                 
-            
+      'If %value is not NA and greater than 0 and greater than Largest%inc variable then set Largest%inc variable to new value
+      
                 If (ws.Range("K" & j) <> "NA" And ws.Range("K" & j) > 0 And ws.Range("K" & j) > LargestIncPercent) Then
                 
                     LargestIncPercent = ws.Range("K" & j)
                     LargestIncTicker = ws.Range("I" & j)
                     
                 End If
+                
+       'If %value is not NA and less than 0 and less than Largest%decc variable then set Largest%dec variable to new value
                 
                 If (ws.Range("K" & j) <> "NA" And ws.Range("K" & j) < 0 And ws.Range("K" & j) < LargestDecPercent) Then
                 
@@ -149,6 +192,8 @@ Sub stock_calc()
                 
                 End If
                 
+        'If value greater than LargestStockVol variable then set LargestStockVol variable to new value
+        
                 If (ws.Range("L" & j) > LargestStockVol) Then
                 
                     LargestVolTicker = ws.Range("I" & j)
@@ -159,6 +204,7 @@ Sub stock_calc()
             Next j
             
             'MsgBox (ws.Name & LargestIncTicker & LargestDecTicker & LargestVolTicker)
+   'Set column names for data inserted through script
             
             ws.Range("P1") = "Ticker"
             ws.Range("P2") = LargestIncTicker
